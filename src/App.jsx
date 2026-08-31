@@ -10,6 +10,8 @@ import Feed from "./pages/Feed";
 import ManagerView from "./pages/ManagerView";
 import AdminView from "./pages/AdminView";
 import CreateFeed from "./pages/CreateFeed";
+import EditFeed from "./pages/EditFeed";
+import ListingDetail from "./pages/ListingDetail";
 import CreateAlert from "./pages/CreateAlert";
 import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
@@ -26,6 +28,8 @@ function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/feed" element={<Feed />} />
               <Route path="/create" element={<CreateFeed />} />
+              <Route path="/edit/:id" element={<EditFeed />} />
+              <Route path="/listing/:id" element={<ListingDetail />} />
               <Route
                 path="/create-alert"
                 element={

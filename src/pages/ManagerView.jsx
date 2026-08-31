@@ -1,4 +1,5 @@
-import { MapPin, Edit2, Trash2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { MapPin, Bath, Edit2, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useListings } from "../context/ListingsContext";
 import BottomNav from "../components/BottomNav";
@@ -12,6 +13,7 @@ const statusStyles = {
 function ManagerView() {
   const { user } = useAuth();
   const { listings, deleteListing } = useListings();
+  const navigate = useNavigate();
   const myListings = listings.filter((l) => l.manager === user?.name);
 
   const handleDelete = (id, title) => {
@@ -61,55 +63,51 @@ function ManagerView() {
         {myListings.map((listing) => (
           <div
             key={listing.id}
-            className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden flex"
+            className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all p-4"
           >
-            {listing.video ? (
-              <video
-                src={listing.video}
-                controls
-                loop
-                className="w-28 h-28 object-cover bg-black"
-              />
-            ) : (
-              <img
-                src={listing.image}
-                alt={listing.title}
-                className="w-28 h-28 object-cover"
-              />
-            )}
-            <div className="p-4 flex-1 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">
-                    {listing.title}
-                  </h2>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyles[listing.status]}`}
-                  >
-                    {listing.status}
-                  </span>
-                </div>
-                <div className="flex items-center text-gray-400 text-sm mt-1">
-                  <MapPin size={14} className="mr-1" />
-                  {listing.location}
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-sky-600 font-bold text-sm">
-                  Ksh {listing.price.toLocaleString()}
-                  <span className="text-gray-400 font-normal">/mo</span>
-                </p>
-                <div className="flex gap-3 text-gray-400">
-                  <button className="hover:text-sky-600 transition">
-                    <Edit2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(listing.id, listing.title)}
-                    className="hover:text-red-500 transition"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+            <div className="flex items-center justify-between">
+              <Link
+                to={`/listing/${listing.id}`}
+                className="font-semibold text-gray-900 hover:text-sky-600 transition"
+              >
+                {listing.title}
+              </Link>
+              <span
+                className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyles[listing.status]}`}
+              >
+                {listing.status}
+              </span>
+            </div>
+            <div className="flex items-center text-gray-400 text-sm mt-1">
+              <MapPin size={14} className="mr-1" />
+              {listing.location}
+            </div>
+            <div className="flex items-center gap-4 text-gray-500 text-sm mt-2">
+              <span>
+                {listing.beds} bed{listing.beds !== 1 ? "s" : ""}
+              </span>
+              <span className="flex items-center gap-1">
+                <Bath size={14} /> {listing.toilets || 0}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-sky-600 font-bold text-sm">
+                Ksh {listing.price.toLocaleString()}
+                <span className="text-gray-400 font-normal">/mo</span>
+              </p>
+              <div className="flex gap-3 text-gray-400">
+                <button
+                  onClick={() => navigate(`/edit/${listing.id}`)}
+                  className="hover:text-sky-600 transition"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(listing.id, listing.title)}
+                  className="hover:text-red-500 transition"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           </div>

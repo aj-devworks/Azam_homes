@@ -9,9 +9,9 @@ const defaultListings = [
     location: "Westlands, Nairobi",
     price: 45000,
     beds: 2,
+    toilets: 1,
     status: "approved",
     manager: "Fatima Ahmed",
-    image: "https://placehold.co/400x250",
   },
   {
     id: 2,
@@ -19,9 +19,9 @@ const defaultListings = [
     location: "Kilimani, Nairobi",
     price: 25000,
     beds: 1,
+    toilets: 1,
     status: "pending",
     manager: "Fatima Ahmed",
-    image: "https://placehold.co/400x250",
   },
   {
     id: 3,
@@ -29,9 +29,9 @@ const defaultListings = [
     location: "Karen, Nairobi",
     price: 90000,
     beds: 3,
+    toilets: 2,
     status: "pending",
     manager: "John Kamau",
-    image: "https://placehold.co/400x250",
   },
 ];
 
@@ -46,13 +46,14 @@ export function ListingsProvider({ children }) {
   }, [listings]);
 
   const addListing = (data) => {
-    const newListing = {
-      id: Date.now(),
-      status: "pending",
-      image: "https://placehold.co/400x250",
-      ...data,
-    };
+    const newListing = { id: Date.now(), status: "pending", ...data };
     setListings((prev) => [newListing, ...prev]);
+  };
+
+  const updateListing = (id, data) => {
+    setListings((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, ...data } : l)),
+    );
   };
 
   const approveListing = (id) =>
@@ -71,6 +72,7 @@ export function ListingsProvider({ children }) {
       value={{
         listings,
         addListing,
+        updateListing,
         approveListing,
         rejectListing,
         deleteListing,

@@ -1,19 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
 import { useListings } from "../context/ListingsContext";
 import BottomNav from "../components/BottomNav";
 
-const toTitleCase = (str) =>
-  str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+function EditFeed() {
+  const { id } = useParams();
+  const { listings, updateListing } = useListings();
+  const navigate = useNavigate();
+  const listing = listings.find((l) => l.id === Number(id));
 
-const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-function CreateFeed() {
   const [form, setForm] = useState({
     title: "",
     location: "",
@@ -23,9 +19,19 @@ function CreateFeed() {
     description: "",
   });
   const [errors, setErrors] = useState({});
-  const { user } = useAuth();
-  const { addListing } = useListings();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (listing) {
+      setForm({
+        title: listing.title || "",
+        location: listing.location || "",
+        price: listing.price || "",
+        beds: listing.beds || "",
+        toilets: listing.toilets || "",
+        description: listing.description || "",
+      });
+    }
+  }, [listing]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -52,16 +58,13 @@ function CreateFeed() {
       setErrors(validationErrors);
       return;
     }
-    addListing({
-      title: toTitleCase(form.title.trim()),
-      location: toTitleCase(form.location.trim()),
+    updateListing(Number(id), {
+      title: form.title,
+      location: form.location,
       price: Number(form.price),
       beds: Number(form.beds),
       toilets: Number(form.toilets),
-      description: form.description.trim()
-        ? capitalizeFirst(form.description.trim())
-        : "",
-      manager: user?.name || "Unknown",
+      description: form.description,
     });
     navigate("/manager");
   };
@@ -72,6 +75,14 @@ function CreateFeed() {
         ? "border-red-300 focus:ring-red-400"
         : "border-gray-200 focus:ring-sky-500"
     }`;
+
+  if (!listing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">
+        Listing not found.
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -84,8 +95,8 @@ function CreateFeed() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <p className="text-sky-100 text-xs">New listing</p>
-            <h1 className="text-lg font-bold">Post a Space</h1>
+            <p className="text-sky-100 text-xs">Edit listing</p>
+            <h1 className="text-lg font-bold">Update Space</h1>
           </div>
         </div>
       </div>
@@ -102,8 +113,7 @@ function CreateFeed() {
                 name="title"
                 value={form.title}
                 onChange={handleChange}
-                placeholder="e.g. 2 Bedroom Apartment"
-                className={`${inputClass("title")} capitalize`}
+                className={inputClass("title")}
               />
               {errors.title && (
                 <p className="text-red-500 text-xs mt-1">{errors.title}</p>
@@ -119,8 +129,7 @@ function CreateFeed() {
                 name="location"
                 value={form.location}
                 onChange={handleChange}
-                placeholder="e.g. Westlands, Nairobi"
-                className={`${inputClass("location")} capitalize`}
+                className={inputClass("location")}
               />
               {errors.location && (
                 <p className="text-red-500 text-xs mt-1">{errors.location}</p>
@@ -136,7 +145,6 @@ function CreateFeed() {
                 name="price"
                 value={form.price}
                 onChange={handleChange}
-                placeholder="45000"
                 className={inputClass("price")}
               />
               {errors.price && (
@@ -154,7 +162,6 @@ function CreateFeed() {
                   name="beds"
                   value={form.beds}
                   onChange={handleChange}
-                  placeholder="2"
                   className={inputClass("beds")}
                 />
                 {errors.beds && (
@@ -170,7 +177,6 @@ function CreateFeed() {
                   name="toilets"
                   value={form.toilets}
                   onChange={handleChange}
-                  placeholder="1"
                   className={inputClass("toilets")}
                 />
                 {errors.toilets && (
@@ -188,7 +194,6 @@ function CreateFeed() {
                 value={form.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Describe the space..."
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
               />
             </div>
@@ -198,7 +203,7 @@ function CreateFeed() {
             type="submit"
             className="w-full bg-sky-600 text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-sky-600/25 hover:bg-sky-700 hover:-translate-y-0.5 transition-all"
           >
-            Submit for Approval
+            Save Changes
           </button>
         </div>
       </form>
@@ -208,4 +213,4 @@ function CreateFeed() {
   );
 }
 
-export default CreateFeed;
+export default EditFeed;
