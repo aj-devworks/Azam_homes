@@ -1,7 +1,6 @@
-// src/pages/CreateFeed.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Video, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useListings } from "../context/ListingsContext";
 import BottomNav from "../components/BottomNav";
@@ -14,7 +13,8 @@ function CreateFeed() {
     beds: "",
     description: "",
   });
-  const [imagePreview, setImagePreview] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
+  const [videoError, setVideoError] = useState("");
   const { user } = useAuth();
   const { addListing } = useListings();
   const navigate = useNavigate();
@@ -22,11 +22,24 @@ function CreateFeed() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleImageChange = (e) => {
+  const handleVideoChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setVideoError("");
+
+    if (!file.type.startsWith("video/")) {
+      setVideoError("Please select a video file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setVideoError("Video is too large — please keep it under 5MB for now.");
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
+    reader.onloadend = () => setVideoPreview(reader.result);
+    reader.onerror = () =>
+      setVideoError("Could not read that file — try a different video.");
     reader.readAsDataURL(file);
   };
 
@@ -38,7 +51,7 @@ function CreateFeed() {
       price: Number(form.price),
       beds: Number(form.beds),
       manager: user?.name || "Unknown",
-      ...(imagePreview && { image: imagePreview }),
+      ...(videoPreview && { video: videoPreview }),
     });
     navigate("/manager");
   };
@@ -63,16 +76,17 @@ function CreateFeed() {
       <form onSubmit={handleSubmit} className="px-5 sm:px-8 -mt-5">
         <div className="max-w-lg mx-auto space-y-4">
           <div className="bg-white rounded-2xl shadow-lg p-5 space-y-4">
-            {imagePreview ? (
+            {videoPreview ? (
               <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-44 object-cover rounded-2xl"
+                <video
+                  src={videoPreview}
+                  controls
+                  loop
+                  className="w-full h-48 object-cover rounded-2xl bg-black"
                 />
                 <button
                   type="button"
-                  onClick={() => setImagePreview(null)}
+                  onClick={() => setVideoPreview(null)}
                   className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition"
                 >
                   <X size={14} />
@@ -80,15 +94,21 @@ function CreateFeed() {
               </div>
             ) : (
               <label className="border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center py-8 text-gray-400 cursor-pointer hover:border-sky-400 hover:text-sky-500 hover:bg-sky-50/50 transition">
-                <Upload size={24} />
-                <p className="text-sm mt-2">Tap to upload a photo</p>
+                <Video size={24} />
+                <p className="text-sm mt-2">
+                  Tap to upload a video walkthrough
+                </p>
+                <p className="text-xs text-gray-300 mt-1">Under 5MB</p>
                 <input
                   type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
+                  accept="video/*"
+                  onChange={handleVideoChange}
                   className="hidden"
                 />
               </label>
+            )}
+            {videoError && (
+              <p className="text-red-500 text-xs -mt-2">{videoError}</p>
             )}
 
             <div>
@@ -135,7 +155,7 @@ function CreateFeed() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Toilets
+                  Bedrooms
                 </label>
                 <input
                   type="number"

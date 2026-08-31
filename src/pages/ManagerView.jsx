@@ -63,11 +63,20 @@ function ManagerView() {
             key={listing.id}
             className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden flex"
           >
-            <img
-              src={listing.image}
-              alt={listing.title}
-              className="w-28 h-28 object-cover"
-            />
+            {listing.video ? (
+              <video
+                src={listing.video}
+                controls
+                loop
+                className="w-28 h-28 object-cover bg-black"
+              />
+            ) : (
+              <img
+                src={listing.image}
+                alt={listing.title}
+                className="w-28 h-28 object-cover"
+              />
+            )}
             <div className="p-4 flex-1 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
