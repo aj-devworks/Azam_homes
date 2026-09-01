@@ -1,3 +1,5 @@
+// src/pages/AdminView.jsx
+import { Link } from "react-router-dom";
 import { MapPin, Check, X } from "lucide-react";
 import { useListings } from "../context/ListingsContext";
 import BottomNav from "../components/BottomNav";
@@ -48,26 +50,24 @@ function AdminView() {
             key={listing.id}
             className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden"
           >
-            <div className="flex">
-              <img
-                src={listing.image}
-                alt={listing.title}
-                className="w-28 h-28 object-cover"
-              />
-              <div className="p-4 flex-1">
-                <h2 className="font-semibold text-gray-900">{listing.title}</h2>
-                <div className="flex items-center text-gray-400 text-sm mt-1">
-                  <MapPin size={14} className="mr-1" />
-                  {listing.location}
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Posted by {listing.manager}
-                </p>
-                <p className="text-sky-600 font-bold text-sm mt-1">
-                  Ksh {listing.price.toLocaleString()}
-                  <span className="text-gray-400 font-normal">/mo</span>
-                </p>
+            <div className="p-4">
+              <Link
+                to={`/listing/${listing.id}`}
+                className="font-semibold text-gray-900 hover:text-sky-600 transition"
+              >
+                {listing.title}
+              </Link>
+              <div className="flex items-center text-gray-400 text-sm mt-1">
+                <MapPin size={14} className="mr-1" />
+                {listing.location}
               </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Posted by {listing.manager}
+              </p>
+              <p className="text-sky-600 font-bold text-sm mt-1">
+                Ksh {listing.price.toLocaleString()}
+                <span className="text-gray-400 font-normal">/mo</span>
+              </p>
             </div>
             <div className="flex border-t border-gray-100">
               <button
