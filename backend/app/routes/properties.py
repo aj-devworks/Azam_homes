@@ -113,6 +113,28 @@ def update_property(property_id):
     return jsonify(prop.to_dict()), 200
 
 
+@properties_bp.patch("/<string:property_id>/approve")
+@roles_required(Role.ADMIN)
+def approve_property(property_id):
+    prop = Property.query.get(property_id)
+    if not prop:
+        return jsonify({"error": "Property not found"}), 404
+    prop.status = "approved"
+    db.session.commit()
+    return jsonify(prop.to_dict()), 200
+
+
+@properties_bp.patch("/<string:property_id>/reject")
+@roles_required(Role.ADMIN)
+def reject_property(property_id):
+    prop = Property.query.get(property_id)
+    if not prop:
+        return jsonify({"error": "Property not found"}), 404
+    prop.status = "rejected"
+    db.session.commit()
+    return jsonify(prop.to_dict()), 200
+
+
 @properties_bp.delete("/<string:property_id>")
 @roles_required(Role.ADMIN, Role.MANAGER)
 def delete_property(property_id):

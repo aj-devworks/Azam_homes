@@ -13,8 +13,8 @@ class Role:
 
 
 PASSWORD_RULE = re.compile(
-    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{10,}$"
-)  # 10+ chars, upper, lower, digit, symbol
+    r"^(?=.*[A-Z]).{8,}$"
+)  # 8+ chars, at least one uppercase letter
 
 
 class User(db.Model):
@@ -25,6 +25,8 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default=Role.MANAGER)
+    phone = db.Column(db.String(30), unique=True, nullable=True, index=True)
+    building = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     failed_login_attempts = db.Column(db.Integer, nullable=False, default=0)
@@ -50,8 +52,7 @@ class User(db.Model):
     def set_password(self, raw_password: str) -> None:
         if not self.validate_password_strength(raw_password):
             raise ValueError(
-                "Password must be 10+ characters and include an uppercase letter, "
-                "lowercase letter, digit, and symbol."
+                "Password must be 8+ characters and include at least one uppercase letter."
             )
         hashed = bcrypt.hashpw(raw_password.encode("utf-8"), bcrypt.gensalt(rounds=12))
         self.password_hash = hashed.decode("utf-8")
@@ -70,6 +71,8 @@ class User(db.Model):
             "name": self.name,
             "email": self.email,
             "role": self.role,
+            "phone": self.phone,
+            "building": self.building,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

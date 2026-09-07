@@ -6,12 +6,14 @@ from app.models.property import PropertyStatus, PropertyType
 class RegisterSchema(Schema):
     name = fields.Str(required=True, validate=validate.Length(min=2, max=120))
     email = fields.Email(required=True)
-    password = fields.Str(required=True, validate=validate.Length(min=10, max=128))
+    password = fields.Str(required=True, validate=validate.Length(min=8, max=128))
     # Only an existing admin can create another admin — enforced in the route,
     # not trusted from client input beyond this allow-list.
     role = fields.Str(
         required=False, validate=validate.OneOf(["admin", "manager"]), load_default="manager"
     )
+    phone = fields.Str(required=False, allow_none=True, validate=validate.Length(max=30))
+    building = fields.Str(required=False, allow_none=True, validate=validate.Length(max=200))
 
 
 class LoginSchema(Schema):
@@ -31,7 +33,7 @@ class PropertyCreateSchema(Schema):
         required=False, validate=validate.OneOf(PropertyType.ALL), load_default=PropertyType.HOUSE
     )
     status = fields.Str(
-        required=False, validate=validate.OneOf(PropertyStatus.ALL), load_default=PropertyStatus.AVAILABLE
+        required=False, validate=validate.OneOf(PropertyStatus.ALL), load_default=PropertyStatus.PENDING
     )
     images = fields.List(fields.Url(), required=False, load_default=[])
 

@@ -5,10 +5,11 @@ from app.extensions import db
 
 
 class PropertyStatus:
-    AVAILABLE = "available"
-    PENDING = "pending"
+    PENDING = "pending"      # newly submitted by a manager, awaiting admin review
+    APPROVED = "approved"    # visible on the public site
+    REJECTED = "rejected"    # admin declined it
     SOLD = "sold"
-    ALL = (AVAILABLE, PENDING, SOLD)
+    ALL = (PENDING, APPROVED, REJECTED, SOLD)
 
 
 class PropertyType:
@@ -31,7 +32,7 @@ class Property(db.Model):
     bathrooms = db.Column(db.Integer, nullable=True)
     area_sqft = db.Column(db.Integer, nullable=True)
     property_type = db.Column(db.String(20), nullable=False, default=PropertyType.HOUSE)
-    status = db.Column(db.String(20), nullable=False, default=PropertyStatus.AVAILABLE)
+    status = db.Column(db.String(20), nullable=False, default=PropertyStatus.PENDING)
 
     manager_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
 
@@ -61,6 +62,7 @@ class Property(db.Model):
             "property_type": self.property_type,
             "status": self.status,
             "manager_id": self.manager_id,
+            "manager_name": self.manager.name if self.manager else None,
             "images": [img.url for img in self.images],
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

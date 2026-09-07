@@ -21,11 +21,54 @@ MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
 
 
+@auth_bp.post("/signup")
+@limiter.limit("10 per minute")
+def signup():
+    """Public self-service signup. ALWAYS creates a manager account — never
+    admin — regardless of what the client sends. Admin accounts can only be
+    created by an existing admin via /register."""
+    payload = request.get_json(force=True, silent=True) or {}
+    payload["role"] = Role.MANAGER  # ignore/override any client-supplied role
+    try:
+        data = RegisterSchema().load(payload)
+    except ValidationError as err:
+        return jsonify({"error": "Validation failed", "details": err.messages}), 400
+
+    if User.query.filter_by(email=data["email"].lower()).first():
+        return jsonify({"error": "An account with this email already exists"}), 409
+
+    phone = payload.get("phone")
+    if phone and User.query.filter_by(phone=phone).first():
+        return jsonify({"error": "An account with this phone number already exists"}), 409
+
+    user = User(
+        name=data["name"],
+        email=data["email"].lower(),
+        role=Role.MANAGER,
+        phone=payload.get("phone"),
+        building=payload.get("building"),
+    )
+    try:
+        user.set_password(data["password"])
+    except ValueError as err:
+        return jsonify({"error": str(err)}), 400
+
+    db.session.add(user)
+    db.session.commit()
+
+    extra_claims = {"role": user.role}
+    access_token = create_access_token(identity=user.id, additional_claims=extra_claims)
+    refresh_token = create_refresh_token(identity=user.id, additional_claims=extra_claims)
+    return jsonify(
+        {"access_token": access_token, "refresh_token": refresh_token, "user": user.to_dict()}
+    ), 201
+
+
 @auth_bp.post("/register")
 @jwt_required()
 @admin_required
 def register():
-    """Only an existing admin may create new accounts (admin or manager)."""
+    """Admin-only: create an account of any role (admin or manager)."""
     try:
         data = RegisterSchema().load(request.get_json(force=True, silent=True) or {})
     except ValidationError as err:
