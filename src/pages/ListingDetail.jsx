@@ -13,7 +13,9 @@ function ListingDetail() {
   const { id } = useParams();
   const { listings } = useListings();
   const navigate = useNavigate();
-  const listing = listings.find((l) => l.id === Number(id));
+  // Backend ids are UUID strings now (not the old mock numeric ids), so
+  // compare directly as strings instead of Number(id).
+  const listing = listings.find((l) => String(l.id) === String(id));
 
   if (!listing) {
     return (

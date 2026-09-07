@@ -10,23 +10,28 @@ function Signup() {
     phone: "",
     building: "",
     password: "",
-    role: "manager",
   });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = signup(form);
+    setError("");
+    setSubmitting(true);
+    const result = await signup(form);
+    setSubmitting(false);
     if (!result.success) {
       setError(result.message);
       return;
     }
-    navigate(form.role === "manager" ? "/manager" : "/admin");
+    // Public signup always creates a manager account — admin accounts are
+    // created separately by an existing admin, never through this form.
+    navigate("/manager");
   };
 
   return (
@@ -90,51 +95,35 @@ function Signup() {
               required
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
             />
-
-            {form.role === "manager" && (
-              <input
-                name="building"
-                type="text"
-                placeholder="Building Name"
-                value={form.building}
-                onChange={handleChange}
-                required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
-              />
-            )}
-
+            <input
+              name="building"
+              type="text"
+              placeholder="Building Name"
+              value={form.building}
+              onChange={handleChange}
+              required
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
+            />
             <input
               name="password"
               type="password"
-              placeholder="Password"
+              placeholder="Password (8+ chars, at least one uppercase letter)"
               value={form.password}
               onChange={handleChange}
               required
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
             />
 
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, role: "manager" })}
-                className={`py-2.5 rounded-xl text-sm font-medium border-2 transition ${form.role === "manager" ? "bg-sky-600 text-white border-sky-600" : "bg-white text-gray-600 border-gray-200 hover:border-sky-300"}`}
-              >
-                Manager
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, role: "admin" })}
-                className={`py-2.5 rounded-xl text-sm font-medium border-2 transition ${form.role === "admin" ? "bg-sky-600 text-white border-sky-600" : "bg-white text-gray-600 border-gray-200 hover:border-sky-300"}`}
-              >
-                Admin
-              </button>
-            </div>
+            {/* Note: there's no role picker here anymore. The backend always
+                creates manager accounts through this public form — admin
+                accounts are provisioned separately by an existing admin. */}
 
             <button
               type="submit"
-              className="w-full bg-sky-600 text-white py-3 rounded-xl font-semibold shadow-lg shadow-sky-600/25 hover:bg-sky-700 hover:-translate-y-0.5 transition-all mt-2"
+              disabled={submitting}
+              className="w-full bg-sky-600 text-white py-3 rounded-xl font-semibold shadow-lg shadow-sky-600/25 hover:bg-sky-700 hover:-translate-y-0.5 transition-all mt-2 disabled:opacity-60"
             >
-              Create Account
+              {submitting ? "Creating account..." : "Create Account"}
             </button>
           </form>
         </div>
