@@ -13,8 +13,8 @@ class Role:
 
 
 PASSWORD_RULE = re.compile(
-    r"^(?=.*[A-Z]).{8,}$"
-)  # 8+ chars, at least one uppercase letter
+    r"^(?=.*[a-z]).{4,}$"
+)  # 4+ chars, at least one  letter
 
 
 class User(db.Model):
@@ -42,7 +42,20 @@ class User(db.Model):
     )
 
     properties = db.relationship(
-        "Property", backref="manager", lazy="dynamic", foreign_keys="Property.manager_id"
+        "Property",
+        backref="manager",
+        lazy="dynamic",
+        foreign_keys="Property.manager_id",
+        cascade="all, delete-orphan",
+    )
+
+    # Without this, deleting a user whose old tokens were ever revoked
+    # (logout) fails with a foreign-key violation on token_blocklist.
+    blocklisted_tokens = db.relationship(
+        "TokenBlocklist",
+        backref="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
     )
 
     @staticmethod
