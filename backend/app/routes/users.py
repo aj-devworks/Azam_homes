@@ -1,11 +1,28 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db
 from app.models import Role, User
 from app.utils.decorators import admin_required
 
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
+
+
+@users_bp.get("/admin-contact")
+def admin_contact():
+    """Public — shown on the login/signup screens before anyone is
+    authenticated, so a visitor can reach the admin directly. Only exposes
+    the admin's own name/email/phone, never the full user list."""
+    admin = User.query.filter_by(role=Role.ADMIN).order_by(User.created_at.asc()).first()
+    if not admin:
+        return jsonify({"error": "No admin account found"}), 404
+    return jsonify(
+        {
+            "name": admin.name,
+            "email": admin.email,
+            "phone": admin.phone,
+        }
+    ), 200
 
 
 @users_bp.get("")

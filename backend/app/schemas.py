@@ -6,7 +6,7 @@ from app.models.property import PropertyStatus, PropertyType
 class RegisterSchema(Schema):
     name = fields.Str(required=True, validate=validate.Length(min=2, max=120))
     email = fields.Email(required=True)
-    password = fields.Str(required=True, validate=validate.Length(min=8, max=128))
+    password = fields.Str(required=True, validate=validate.Length(min=4, max=128))
     # Only an existing admin can create another admin — enforced in the route,
     # not trusted from client input beyond this allow-list.
     role = fields.Str(

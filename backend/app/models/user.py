@@ -13,8 +13,8 @@ class Role:
 
 
 PASSWORD_RULE = re.compile(
-    r"^(?=.*[a-z]).{4,}$"
-)  # 4+ chars, at least one  letter
+    r"^.{4,}$"
+)  # 4+ characters, no case or character-type requirements
 
 
 class User(db.Model):
@@ -65,7 +65,7 @@ class User(db.Model):
     def set_password(self, raw_password: str) -> None:
         if not self.validate_password_strength(raw_password):
             raise ValueError(
-                "Password must be 8+ characters and include at least one uppercase letter."
+                "Password must be at least 4 characters."
             )
         hashed = bcrypt.hashpw(raw_password.encode("utf-8"), bcrypt.gensalt(rounds=12))
         self.password_hash = hashed.decode("utf-8")
