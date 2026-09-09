@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://azam-homes.vercel.app/sitemap.xml
