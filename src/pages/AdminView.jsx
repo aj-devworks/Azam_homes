@@ -1,8 +1,20 @@
 // src/pages/AdminView.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Check, X, Phone, Building2, Mail } from "lucide-react";
+import {
+  MapPin,
+  Check,
+  X,
+  Phone,
+  Building2,
+  Mail,
+  Ban,
+  RotateCcw,
+  Trash2,
+  KeyRound,
+} from "lucide-react";
 import { useListings } from "../context/ListingsContext";
+import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import BottomNav from "../components/BottomNav";
 
@@ -14,7 +26,6 @@ function ManagerDetailModal({ managerId, onClose }) {
     let cancelled = false;
     async function load() {
       try {
-        // Admin-only endpoint — returns every account, including phone/building.
         const users = await api.get("/users");
         if (cancelled) return;
         const found = users.find((u) => u.id === managerId);
@@ -83,6 +94,164 @@ function ManagerDetailModal({ managerId, onClose }) {
   );
 }
 
+function ManagersSection() {
+  const { user: currentUser } = useAuth();
+  const [managers, setManagers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState(null); // disables buttons on the row being acted on
+
+  const loadManagers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const users = await api.get("/users");
+      setManagers(users.filter((u) => u.role === "manager"));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadManagers();
+  }, [loadManagers]);
+
+  const handleBan = async (id) => {
+    setBusyId(id);
+    try {
+      await api.patch(`/users/${id}/deactivate`);
+      await loadManagers();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleUnban = async (id) => {
+    setBusyId(id);
+    try {
+      await api.patch(`/users/${id}/activate`);
+      await loadManagers();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleResetPassword = async (id, name) => {
+    const newPassword = window.prompt(
+      `Set a new password for ${name} (min 4 characters):`,
+    );
+    if (!newPassword) return; // cancelled
+    setBusyId(id);
+    try {
+      await api.patch(`/users/${id}/reset-password`, { password: newPassword });
+      alert(`Password reset for ${name}. Share the new password with them directly.`);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    // Deleting a manager also deletes every listing they posted — make that
+    // consequence explicit before it happens, since it can't be undone.
+    const confirmed = window.confirm(
+      `Delete ${name}? This permanently removes their account and every listing they posted. This cannot be undone.`,
+    );
+    if (!confirmed) return;
+    setBusyId(id);
+    try {
+      await api.del(`/users/${id}`);
+      setManagers((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="px-5 sm:px-8 pt-8">
+      <h2 className="text-sm font-semibold text-gray-900 mb-3">All Managers</h2>
+
+      {loading && <p className="text-sm text-gray-400">Loading managers...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {!loading && !error && managers.length === 0 && (
+        <p className="text-sm text-gray-400">No managers yet.</p>
+      )}
+
+      <div className="space-y-3">
+        {managers.map((m) => {
+          const isBusy = busyId === m.id;
+          return (
+            <div
+              key={m.id}
+              className="bg-white rounded-2xl shadow-sm p-4 flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <p className="font-medium text-gray-900 truncate">{m.name}</p>
+                <p className="text-xs text-gray-400 truncate">{m.email}</p>
+                <span
+                  className={`inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                    m.is_active
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {m.is_active ? "Active" : "Banned"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => handleResetPassword(m.id, m.name)}
+                  disabled={isBusy}
+                  title="Reset password"
+                  className="p-2 rounded-lg text-sky-600 hover:bg-sky-50 transition disabled:opacity-50"
+                >
+                  <KeyRound size={16} />
+                </button>
+                {m.is_active ? (
+                  <button
+                    onClick={() => handleBan(m.id)}
+                    disabled={isBusy}
+                    title="Ban (blocks login, keeps their listings)"
+                    className="p-2 rounded-lg text-yellow-600 hover:bg-yellow-50 transition disabled:opacity-50"
+                  >
+                    <Ban size={16} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleUnban(m.id)}
+                    disabled={isBusy}
+                    title="Unban"
+                    className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition disabled:opacity-50"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(m.id, m.name)}
+                  disabled={isBusy}
+                  title="Delete permanently (also deletes their listings)"
+                  className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function AdminView() {
   const { listings, approveListing, rejectListing } = useListings();
   const [openManagerId, setOpenManagerId] = useState(null);
@@ -141,9 +310,6 @@ function AdminView() {
                 <MapPin size={14} className="mr-1" />
                 {listing.location}
               </div>
-              {/* Clicking the manager's name opens their full details —
-                  phone, building, email — fetched fresh from the admin-only
-                  /users endpoint rather than being baked into the listing. */}
               <button
                 onClick={() => setOpenManagerId(listing.managerId)}
                 className="text-xs text-sky-600 hover:underline mt-1"
@@ -185,6 +351,8 @@ function AdminView() {
           </div>
         ))}
       </div>
+
+      <ManagersSection />
 
       {openManagerId && (
         <ManagerDetailModal

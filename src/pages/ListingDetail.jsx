@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Bed, Bath } from "lucide-react";
+import { ArrowLeft, MapPin, Bed, Bath, Phone, Building2 } from "lucide-react";
 import { useListings } from "../context/ListingsContext";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
 import BottomNav from "../components/BottomNav";
 
 const statusStyles = {
@@ -12,10 +15,34 @@ const statusStyles = {
 function ListingDetail() {
   const { id } = useParams();
   const { listings } = useListings();
+  const { user } = useAuth();
   const navigate = useNavigate();
   // Backend ids are UUID strings now (not the old mock numeric ids), so
   // compare directly as strings instead of Number(id).
   const listing = listings.find((l) => String(l.id) === String(id));
+
+  const isAdmin = user?.role === "admin";
+  const [managerDetails, setManagerDetails] = useState(null);
+
+  // Only admins can call /api/users, and phone/building should stay private
+  // from everyone else — so this fetch only runs for an admin viewer.
+  useEffect(() => {
+    if (!isAdmin || !listing?.managerId) return;
+    let cancelled = false;
+    api
+      .get("/users")
+      .then((users) => {
+        if (cancelled) return;
+        const found = users.find((u) => u.id === listing.managerId);
+        if (found) setManagerDetails(found);
+      })
+      .catch(() => {
+        // silently ignore — the page still works without this extra detail
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, listing?.managerId]);
 
   if (!listing) {
     return (
@@ -85,9 +112,26 @@ function ListingDetail() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">
-            Posted by {listing.manager}
-          </p>
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-400">Posted by {listing.manager}</p>
+
+            {/* Admin-only — never rendered for managers or public visitors */}
+            {isAdmin && managerDetails && (
+              <div className="mt-2 space-y-1.5 bg-sky-50 rounded-xl p-3">
+                <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide mb-1">
+                  Manager contact (admin only)
+                </p>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <Phone size={14} className="text-gray-400" />
+                  {managerDetails.phone || "Not provided"}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <Building2 size={14} className="text-gray-400" />
+                  {managerDetails.building || "Not provided"}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
