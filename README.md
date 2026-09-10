@@ -1,114 +1,97 @@
 # Azam Homes
 
-A role-based real estate listings platform built with React. Managers post available
-spaces; admins review and approve them before they appear publicly.
+A real estate rental listings platform for Nairobi, Kenya. Managers post
+listings, an admin reviews and approves them, and approved listings appear
+on the public feed for renters to browse.
 
-## Tech stack
-
-- **React** (Vite) — UI and component structure
-- **React Router** — client-side routing and protected routes
-- **Tailwind CSS** — styling
-- **lucide-react** — icon set
-- **React Context + localStorage** — auth, listings, and messages state (no backend yet)
-
-## Getting started
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open the printed local URL (usually `http://localhost:5173`).
+**Live site:** https://azam-homes.vercel.app
 
 ## Project structure
 
 ```
-frontend/
-├── src/
-│   ├── assets/              # images (e.g. hero.jpeg)
-│   ├── components/
-│   │   └── BottomNav.jsx    # shared bottom navigation, role-aware
-│   ├── context/
-│   │   ├── AuthContext.jsx      # signup/login/logout, persisted to localStorage
-│   │   ├── ListingsContext.jsx  # listings CRUD, persisted to localStorage
-│   │   └── AlertsContext.jsx    # admin → manager messages, persisted to localStorage
-│   ├── pages/
-│   │   ├── Landing.jsx      # public marketing page
-│   │   ├── Login.jsx
-│   │   ├── Signup.jsx       # role picker: manager (+building) or admin
-│   │   ├── Feed.jsx         # public feed of approved listings, search + category filter
-│   │   ├── ManagerView.jsx  # manager's own listings + stats
-│   │   ├── AdminView.jsx    # pending listings, approve/reject
-│   │   ├── CreateFeed.jsx   # manager: post a new listing
-│   │   ├── CreateAlert.jsx  # admin: send a message to managers
-│   │   ├── Messages.jsx     # inbox of messages
-│   │   └── Profile.jsx      # account info, stats, settings, logout
-│   ├── routes/
-│   │   └── ProtectedRoute.jsx   # redirects if not logged in / wrong role
-│   ├── App.jsx               # route definitions, context providers
-│   └── main.jsx
+Azam-homes/
+  frontend/          React app (Vite) — the site itself
+    backend/         Flask + PostgreSQL API
 ```
 
-## How auth works
+## Stack
 
-`AuthContext` stores two things in `localStorage`:
+- **Frontend:** React, Vite, Tailwind CSS — deployed on [Vercel](https://vercel.com)
+- **Backend:** Python, Flask, SQLAlchemy — deployed on [Render](https://render.com)
+- **Database:** PostgreSQL — hosted on [Supabase](https://supabase.com)
+- **Auth:** JWT (access + refresh tokens), bcrypt password hashing
+- **Uptime:** [UptimeRobot](https://uptimerobot.com) heartbeat keeps the free-tier backend and database from sleeping
 
-- `azam_users` — every account ever signed up (name, email, phone, building, password, role)
-- `azam_user` — whichever account is currently logged in
+## How it works
 
-`signup(data)` rejects duplicate emails and logs the new user in immediately.
-`login(email, password)` checks credentials against `azam_users`.
-`ProtectedRoute` reads the current user from context and redirects to `/login` (if
-logged out) or `/` (if logged in but wrong role) before rendering `/manager` or `/admin`.
+1. A visitor signs up → always becomes a **manager** account (no public admin signup)
+2. A manager creates a listing → status starts as `pending`
+3. The **admin** reviews pending listings in the dashboard → approves or rejects
+4. Approved listings appear on the public feed
+5. Admin can also view manager contact details, ban/unban, reset passwords, or delete manager accounts
 
-**This is a demo auth system.** Passwords are stored in plain text in localStorage —
-fine for a portfolio project, not for production. A real deployment needs a backend
-with hashed passwords and server-side sessions.
+## Setup
 
-## How listings work
+See the individual READMEs for local development instructions:
+- [`frontend/README.md`](./frontend/README.md) — running the React app
+- [`frontend/backend/README.md`](./frontend/backend/README.md) — running the API and database
 
-`ListingsContext` holds an array of listings in `localStorage` (`azam_listings`), each
-with a `status` of `pending`, `approved`, or `rejected`.
+## Deployment
 
-| Action               | Who                        | Effect                                            |
-| -------------------- | -------------------------- | ------------------------------------------------- |
-| `addListing(data)`   | Manager, via `CreateFeed`  | New listing added with `status: 'pending'`        |
-| `approveListing(id)` | Admin, via `AdminView`     | Sets `status: 'approved'` → now visible in `Feed` |
-| `rejectListing(id)`  | Admin, via `AdminView`     | Sets `status: 'rejected'`                         |
-| `deleteListing(id)`  | Manager, via `ManagerView` | Removes it entirely (with a confirm prompt)       |
+- **Frontend:** auto-deploys to Vercel on push to `main`
+- **Backend:** auto-deploys to Render on push to `main`
+- **Database:** Supabase (Session Pooler connection — required for IPv4 networks)
 
-`Feed` only shows `approved` listings. `ManagerView` shows listings filtered to the
-logged-in manager's name. `AdminView` shows all `pending` listings across every manager.
+Environment variables for both are set directly in each platform's dashboard
+(Vercel → Settings → Environment Variables; Render → Environment tab) — not
+committed to the repo.
+# Azam Homes — Frontend
 
-## Responsiveness
+React (Vite) frontend for Azam Homes. Talks to the Flask backend in
+[`backend/`](./backend) via the API client in `src/services/api.js`.
 
-Every page uses Tailwind's mobile-first breakpoints — base styles target the smallest
-screen, with `sm:` (≥640px) and `md:` (≥768px) overrides layered on top. A few examples:
+## Setup
 
-- **Feed grid**: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` — 1 column on phones, up to
-  3 on desktop.
-- **Auth cards** (`Login`, `Signup`): `flex-col md:flex-row` — the branded panel stacks
-  above the form on mobile, sits beside it on desktop.
-- **Spacing/type**: paddings and font sizes step up at each breakpoint
-  (e.g. `px-5 sm:px-8`, `text-3xl sm:text-4xl md:text-5xl`) rather than staying fixed.
-- **Bottom navigation** is `fixed` and full-width at every size, so it stays usable on
-  a phone-sized viewport without extra work.
+```bash
+npm install
+cp .env.local.example .env.local
+# edit .env.local — set VITE_API_BASE_URL to your backend's URL
+npm run dev
+```
 
-To sanity-check it yourself: open the app, then resize the browser window (or use your
-browser's device toolbar) — the property grid should reflow, the auth panels should
-restack, and the bottom nav should stay pinned and legible throughout.
+Local dev expects the backend running at `http://127.0.0.1:5000` by default
+(see `backend/README.md`).
 
-## Known limitations / next steps
+## Project structure
 
-- **No real backend.** All data lives in the browser's `localStorage`. Clearing browser
-  data wipes everything; nothing is shared across devices or browsers.
-- **No image upload.** The "upload photos" control in `CreateFeed` is UI only —
-  listings always use a placeholder image.
-- **Search is location-only.** No price range, bedroom count, or sort options yet.
-- **No pagination.** Fine for demo data, would need it for a real listing volume.
-- **Passwords are stored in plain text.** Do not reuse a real password when testing.
+```
+src/
+  pages/            Route-level pages (Login, Signup, Feed, AdminView, ManagerView, ...)
+  components/       Shared UI pieces (Navbar, BottomNav, propertyCard)
+  context/          React context: AuthContext, ListingsContext, AlertsContext
+  routes/           ProtectedRoute (role-gated routing)
+  services/api.js   Central fetch client — attaches JWT, auto-refreshes on 401
+```
 
-The natural next step is a Flask + PostgreSQL backend (the stack this project was
-originally scoped for) — swapping the Context `localStorage` calls for API requests
-without changing how the pages consume the data.
+## Roles
+
+- **Manager** — signs up publicly, creates listings, sees their own submissions
+- **Admin** — approves/rejects listings, manages manager accounts (ban, delete,
+  reset password), can view manager contact details on any listing
+
+Only one way exists to create an admin: an existing admin calling
+`/api/auth/register`. Public signup always creates managers.
+
+## Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `VITE_API_BASE_URL` | Base URL of the backend API, e.g. `http://127.0.0.1:5000/api` or `https://azam-homes.onrender.com/api` |
+
+## Build
+
+```bash
+npm run build
+```
+
+Deployed automatically to Vercel on push to `main`.
