@@ -21,7 +21,10 @@ class Config:
     if not SQLALCHEMY_DATABASE_URI:
         raise RuntimeError("DATABASE_URL environment variable must be set")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "connect_args": {"options": "-csearch_path=azam"},
+    }
 
     # JWT
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
