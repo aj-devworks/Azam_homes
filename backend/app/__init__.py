@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, jsonify
+from sqlalchemy import event
 
 from app.config import config_by_name
 from app.extensions import cors, db, jwt, limiter, migrate, talisman
@@ -13,6 +14,20 @@ def create_app(config_name: str = None) -> Flask:
 
     # --- Extensions ---
     db.init_app(app)
+
+    # Force every DB connection to use the "azam" schema (the pooler ignores
+    # the connect_args search_path option, so we set it ourselves).
+    def _set_search_path(dbapi_connection, connection_record):
+        previous = dbapi_connection.autocommit
+        dbapi_connection.autocommit = True
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SET SESSION search_path TO azam")
+        cursor.close()
+        dbapi_connection.autocommit = previous
+
+    with app.app_context():
+        event.listen(db.engine, "connect", _set_search_path)
+
     migrate.init_app(app, db)
     jwt.init_app(app)
 
